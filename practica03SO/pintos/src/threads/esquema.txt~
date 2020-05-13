@@ -1,0 +1,23 @@
+Thread:
+    - priority
+
+Ready List: struct list ready_list[PRI_MAX + 1];
+// Map<int, List<Process>>
+
+{
+	0: [P1, P2, ...]
+	1: [Pr,...]
+	...
+	...
+	...
+	63: [Pk, ....]
+}
+
+P_ejecucion no esta en la ready_list
+
+encolar el proceso P en el ready_list:
+    - list_push_back (&ready_list[P->priority], &P->elem)
+
+
+next_thread_to_run
+    - 
