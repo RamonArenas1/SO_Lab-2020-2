@@ -1,0 +1,105 @@
+Thread:
+    - priority
+
+Ready List: struct list ready_list[PRI_MAX + 1];
+// Map<int, List<Process>>
+
+[
+	0 => [P1, P2, ...]
+	1 => [Pr,...]
+	...
+	...
+	...
+	63 => [Pk, ....]
+]
+
+P_ejecucion no esta en la ready_list
+
+encolar el proceso P en el ready_list:
+    - list_push_back (&ready_list[P->priority], &P->elem)
+    
+		ready_list[P->priority] O(1)
+    		list_push_back (...) O(1)
+		Insertar en el ready list es O(1)
+
+
+next_thread_to_run:
+    - for i in (63, 62, ..., 0):
+      	  if(!list_empty (ready_list[P->priority])) 
+	     return list_pop_front (ready_list[P->priority])
+
+      return idle_thread
+
+
+     list_empty (...) O(1)
+     list_push_back (...) O(1)
+     O(1) de iteracion
+     Obtener el siguientes hilo nos toma O(1) * O(1) -> O(1)
+
+      
+	  
+
+- Exclusion Mutua
+
+papitas ()
+  {
+	instruccion 1
+	instruccion 2
+	instruccion 3
+	...
+	...
+	...
+	
+	Mutex (A lo mas un hilo o proceso puede ejecutar simultaneamente este conjunto de instrucciones)
+		instruccion k
+		instruccion k+1
+	...
+	...
+	instruccion N
+   }
+
+
+Candado (Lock), Exclusion Mutua (Mutex)
+
+  Lock lock;
+
+  papitas ()
+  {
+	instruccion 1
+	instruccion 2
+	instruccion 3
+	...
+	...
+	...
+	// Seccion Critica
+	lock.acquire() // Inicia Mutex
+		instruccion k
+		instruccion k+1
+	lock.release() // Termina Mutex
+	...
+	...
+	instruccion N
+   }
+
+Semaforo (Semaphore) - En vez de permitir un unico proceso/hilo en la seccion critica,
+	 	       permite un numero acotado
+
+  Semaphore semaphore(N);
+
+  papitas ()
+  {
+	instruccion 1
+	instruccion 2
+	instruccion 3
+	...
+	...
+	...
+	// Seccion Critica
+	semaphore.down() // Va a dejar pasar a la seccion a lo mas N procesos/hilos simultaneamente
+		instruccion k
+		instruccion k+1
+	semaphore.up() // 
+	...
+	...
+	instruccion N
+   }

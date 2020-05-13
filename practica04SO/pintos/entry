@@ -1,0 +1,4 @@
+#!/bin/bash
+
+useradd -u 501 alain.chevanier
+su alain.chevanier --session-command bash
