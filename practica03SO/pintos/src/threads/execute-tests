@@ -2,7 +2,7 @@
 
 set -x
 
-TESTS="alarm-single alarm-zero alarm-negative alarm-multiple alarm-simultaneous alarm-priority priority-change priority-preempt priority-fifo priority-sema priority-condvar"
+TESTS="alarm-single alarm-zero alarm-negative alarm-multiple alarm-simultaneous"
 
 make
 cd build
