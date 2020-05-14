@@ -92,7 +92,7 @@ thread_init (void)
   lock_init (&tid_lock);
   for (int i = 0; i < PRI_MAX + 1; i++)
   {
-    list_init (&ready_list);
+    list_init (&ready_list[i]);
   }
   list_init (&all_list);
 
@@ -248,8 +248,8 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  struct list priority_list = ready_list[t->priority];
-  list_push_back (&priority_list, &t->elem);
+  struct list *priority_list = &ready_list[t->priority];
+  list_push_back (priority_list, &t->elem);
   t->status = THREAD_READY;
   intr_set_level (old_level);
 }
@@ -319,8 +319,11 @@ thread_yield (void)
   ASSERT (!intr_context ());
 
   old_level = intr_disable ();
-  if (cur != idle_thread) 
-    list_push_back (&ready_list, &cur->elem);
+  if (cur != idle_thread)
+  { 
+    //list_push_back (&ready_list, &cur->elem);
+    list_push_back (&ready_list[cur->priority], &cur->elem);
+  }
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
