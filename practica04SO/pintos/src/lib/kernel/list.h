@@ -178,4 +178,10 @@ void list_unique (struct list *, struct list *duplicates,
 struct list_elem *list_max (struct list *, list_less_func *, void *aux);
 struct list_elem *list_min (struct list *, list_less_func *, void *aux);
 
+/* Compares the structure asociated with two list elem and returns true if 
+  the attribute of the first is less than that of the second */
+#define compare(LIST_ELEM_A , LIST_ELEM_B, STRUCT, MEMBER, ATTRIBUTE)  \
+  ( (bool) ( (list_entry (LIST_ELEM_A, STRUCT, MEMBER)) -> ATTRIBUTE)  \
+  < ( (list_entry (LIST_ELEM_B, STRUCT , MEMBER)) -> ATTRIBUTE) )
+
 #endif /* lib/kernel/list.h */
