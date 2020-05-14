@@ -3,6 +3,14 @@
 
 #include <round.h>
 #include <stdint.h>
+#include <list.h>
+
+
+struct slept_thread {
+    struct thread *thread;
+    int64_t wake_up_tick;
+    struct list_elem elem; 
+};
 
 /* Number of timer interrupts per second. */
 #define TIMER_FREQ 100
