@@ -1,0 +1,23 @@
+#! /usr/bin/env bash
+
+if [ -z "${1}" ]; then
+    print "No instruction provided"
+fi
+
+# Use this only if you want to manually build the image locally
+if [ "${1}" == "build-image" ]; then
+    docker build -t so-2020-2-pintos .
+    exit 0
+fi 
+
+if [ "${1}" == "pull-image" ]; then
+    docker pull alainchevanier/so-2020-2-pintos:1.1
+    exit 0
+fi
+
+if [ "${1}" == "enter-container" ]; then
+    docker run -i -t -v "$PWD":/pintos alainchevanier/so-2020-2-pintos:1.1 bash
+    # Uncomment the following line if you want to use the image you built locally
+    # docker run -i -t -v $PWD:/pintos so-2020-2-pintos bash
+    exit 0
+fi

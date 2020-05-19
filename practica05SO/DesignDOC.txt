@@ -1,0 +1,54 @@
+		+--------------------+
+		| PROJECT 1: THREADS |
+		| ADVANCED SCHEDULER |
+		|   DESIGN DOCUMENT  |
+		+--------------------+
+										   
+---- GROUP ----
+
+>> Fill in the names and email addresses of your group members.
+
+FirstName LastName <email@domain.example>
+FirstName LastName <email@domain.example>
+
+---- PRELIMINARIES ----
+
+>> If you have any preliminary comments on your submission, notes for the
+>> TAs, or extra credit, please give them here.
+
+>> Please cite any offline or online sources you consulted while
+>> preparing your submission, other than the Pintos documentation, course
+>> text, lecture notes, and course staff.
+
+   	 	  ADVANCED SCHEDULER
+		  ==================
+
+---- DATA STRUCTURES ----
+
+>> C1: Copy here the declaration of each new or changed `struct' or
+>> `struct' member, global or static variable, `typedef', or
+>> enumeration.  Identify the purpose of each in 25 words or less.
+
+---- ALGORITHMS ----
+
+>> C2: How do you manage ready_threads value?, how is it affected by 
+>> idle thread?
+
+>> C3: How do you keep low timer's interrupt handler's latency? 
+
+---- RATIONALE ----
+
+>> C4: The assignment explains arithmetic for fixed-point math in
+>> detail, but it leaves it open to you to implement it.  Why did you
+>> decide to implement it the way you did?  If you created an
+>> abstraction layer for fixed-point math, that is, an abstract data
+>> type and/or a set of functions or macros to manipulate fixed-point
+>> numbers, why did you do so?  If not, why not?
+
+>> C5: Are you using an actual multilevel queue for representing the
+>> ready_list? Explain why and the impact it might have on the overall
+>> system's performance.
+
+>> C6: Once you have changed the priority of all process, how do you
+>> make sure that for all waiting list (as ready_list, waiters_list for semaphores
+>> , etc) the highest priority process is the first selected to leave the structure? 

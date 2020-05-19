@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+ set -x
+
+ TESTS="alarm-single alarm-zero alarm-negative alarm-multiple alarm-simultaneous"
+
+ make
+ cd build
+
+ for test_name in $TESTS; do
+     pintos -v -k -T 60 --qemu  -- -q  run ${test_name} < /dev/null 2> tests/threads/${test_name}.errors > tests/threads/${test_name}.output
+     perl -I../.. ../../tests/threads/${test_name}.ck tests/threads/${test_name} tests/threads/${test_name}.result
+ done
+
+ cd ..
