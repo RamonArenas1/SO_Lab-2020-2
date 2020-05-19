@@ -57,7 +57,6 @@ compare_priority(const struct list_elem *a , const struct list_elem *b, void *au
   struct thread *t1 = list_entry(a, struct thread, elem);
   struct thread *t2 = list_entry(b, struct thread, elem);
   return t1 -> priority < t2 -> priority;
-  //return compare (a, b, struct slept_thread, elem, wake_up_tick);
 }
 
 
@@ -80,8 +79,7 @@ sema_down (struct semaphore *sema)
   while (sema->value == 0) 
     {
       //list_push_back (&sema->waiters, &thread_current ()->elem);
-      list_insert_ordered (&sema->waiters, &thread_current ()->elem,
-                            &compare_priority, NULL);
+      list_insert_ordered (&sema->waiters, &thread_current ()->elem, &compare_priority, NULL);
       thread_block ();
     }
   sema->value--;

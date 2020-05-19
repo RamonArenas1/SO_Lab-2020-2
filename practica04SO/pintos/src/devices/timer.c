@@ -95,7 +95,6 @@ compare_slept_ticks(const struct list_elem *a , const struct list_elem *b, void 
   struct slept_thread *t1 = list_entry(a, struct slept_thread, elem);
   struct slept_thread *t2 = list_entry(b, struct slept_thread, elem);
   return t1 -> wake_up_tick < t2 -> wake_up_tick;
-  //return compare (a, b, struct slept_thread, elem, wake_up_tick);
 }
 
 /* Sleeps for approximately TICKS timer ticks.  Interrupts must
