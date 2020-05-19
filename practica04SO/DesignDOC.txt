@@ -11,10 +11,17 @@
 FirstName LastName <email@domain.example>
 FirstName LastName <email@domain.example>
 
+Arenas Ayala Ramón >ramon_cmk@ciencias.unam.mx>
+Lugo Cano Daniel <danylugo@ciencias.unam.mx>
+Millán Pimentel Oscar Fernando <o_fernando_m_p@ciencias.unam.mx>
+
 ---- PRELIMINARIES ----
 
 >> If you have any preliminary comments on your submission, notes for the
 >> TAs, or extra credit, please give them here.
+	Tenemos un punto extra devido a que nuestro compañero Daniel Lugo 
+	participó en clase al mencionar el por que insertar un thread en la nueva
+	ready_list tiene complejidad constante, al igual que la función el next_thread_to_run
 
 >> Please cite any offline or online sources you consulted while
 >> preparing your submission, other than the Pintos documentation, course
@@ -28,18 +35,26 @@ FirstName LastName <email@domain.example>
 >> B1: Copy here the declaration of each new or changed `struct' or
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
+	> static struct list ready_list[PRI_MAX + 1] := se cambio la ready_list a un arreglo de 
+	  listas donde cada casilla es una lista donde se guardara un thread segun su prioridad
 
 ---- ALGORITHMS ----
 
 >> B2: How do you ensure that the highest priority thread waiting for
 >> a semaphore or condition variable wakes up first?
+	Por que los almaceno de manera ordenada por prioridad en la lista de waiters, de esta 	
+	manera los threads con mayor prioridad estan hasta en frente.
 
 >> B3: How do you manage preemption when it is necessary during an 
 >> interrupt handler?
+	Con un condicional que verifica si se encuentra en un interrupt, de ser el caso
+	se manda a llamar intr_yield_on_return(), esta función espera a que la interrupción termine y
+	entonces ejecuta un thread_yield()
 
 >> B4: Did you need to reorganize any instruction inside the code
 >> that manages semaphores or condition variables? if your answer is
 >> yes explain why
+	pendiente ***** 
 
 ---- SYNCHRONIZATION ----
 
@@ -51,3 +66,7 @@ FirstName LastName <email@domain.example>
 
 >> B7: Why did you choose this design?  In what ways is it superior to
 >> another design you considered?
+	Este diseño además de que ahora organiza los threads, dando el tiempo
+	de procesador a aquellos con mayor proridad, tiene cosas bastante eficientes como 
+	el hecho de que con la forma que se implemento la ready_list se hacen insersiones y 
+	salidass de esta en tiempo constante, por lo cual el schedule es eficiente.
