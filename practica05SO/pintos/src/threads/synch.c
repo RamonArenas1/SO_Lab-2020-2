@@ -56,9 +56,8 @@ static bool
 compare_priority(const struct list_elem *a , const struct list_elem *b, void *aux UNUSED){
   struct thread *t1 = list_entry(a, struct thread, elem);
   struct thread *t2 = list_entry(b, struct thread, elem);
-  return t1 -> priority < t2 -> priority;
+  return t1 -> priority > t2 -> priority;
 }
-
 
 /* Down or "P" operation on a semaphore.  Waits for SEMA's value
    to become positive and then atomically decrements it.
@@ -256,13 +255,15 @@ lock_held_by_current_thread (const struct lock *lock)
 
   return lock->holder == thread_current ();
 }
-
-/* One semaphore in a list. */
-struct semaphore_elem 
-  {
-    struct list_elem elem;              /* List element. */
-    struct semaphore semaphore;         /* This semaphore. */
-  };
+
+/* Compares the thread _sleep structure asociated with two list elem and returns true if 
+  the wake_up_tick of the first is less than that of the second */
+static bool
+compare_priority_sema(const struct list_elem *a , const struct list_elem *b, void *aux UNUSED){
+  struct thread *t1 = (list_entry(a, struct semaphore_elem , elem))->thread;
+  struct thread *t2 = (list_entry(b, struct semaphore_elem , elem))->thread;
+  return t1 -> priority > t2 -> priority;
+}
 
 /* Initializes condition variable COND.  A condition variable
    allows one piece of code to signal a condition and cooperating
@@ -306,9 +307,10 @@ cond_wait (struct condition *cond, struct lock *lock)
   ASSERT (lock_held_by_current_thread (lock));
   
   sema_init (&waiter.semaphore, 0);
+  waiter.thread = thread_current();
   //list_push_back (&cond->waiters, &waiter.elem);
   list_insert_ordered (&cond->waiters, &waiter.elem,
-                            &compare_priority, NULL);
+                            &compare_priority_sema, NULL);
   lock_release (lock);
   sema_down (&waiter.semaphore);
   lock_acquire (lock);
