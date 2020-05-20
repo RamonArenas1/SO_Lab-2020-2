@@ -38,6 +38,16 @@ Millán Pimentel Oscar Fernando <o_fernando_m_p@ciencias.unam.mx>
 	> static struct list ready_list[PRI_MAX + 1] := se cambio la ready_list a un arreglo de 
 	  listas donde cada casilla es una lista donde se guardara un thread segun su prioridad
 
+	> /* One semaphore in a list. */
+	  struct semaphore_elem 
+ 	 {
+	    struct list_elem elem;              /* List element. */
+	    struct semaphore semaphore;         /* This semaphore. */
+	    struct thread *thread;
+	  };
+	  se agrego un apuntador a un thread el cual sera asignado al thread_current(), esto para poder
+	  obtener su prioridad y ordenarlos en la lista de waiters.
+
 ---- ALGORITHMS ----
 
 >> B2: How do you ensure that the highest priority thread waiting for
@@ -54,7 +64,9 @@ Millán Pimentel Oscar Fernando <o_fernando_m_p@ciencias.unam.mx>
 >> B4: Did you need to reorganize any instruction inside the code
 >> that manages semaphores or condition variables? if your answer is
 >> yes explain why
-	pendiente ***** 
+	Se invirtió el orden en sema_up() para incrementar el valor antes de hacer thread_unblock()
+	Esto debido a que al desbloquearse un thread puede que este sea el de mas alta prioridad lo que
+	haría que existiera un cambio de contexto y el semaforo no habria incrementado su valor.
 
 ---- SYNCHRONIZATION ----
 
