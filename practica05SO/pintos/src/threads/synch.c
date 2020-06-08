@@ -50,13 +50,22 @@ sema_init (struct semaphore *sema, unsigned value)
   list_init (&sema->waiters);
 }
 
-/* Compares the thread _sleep structure asociated with two list elem and returns true if 
-  the wake_up_tick of the first is less than that of the second */
+/* Compares the thread structure asociated with two list elem and returns true if 
+  the priority of the first is more than that of the second */
 static bool
 compare_priority(const struct list_elem *a , const struct list_elem *b, void *aux UNUSED){
   struct thread *t1 = list_entry(a, struct thread, elem);
   struct thread *t2 = list_entry(b, struct thread, elem);
   return t1 -> priority > t2 -> priority;
+}
+
+/* Compares the thread structure asociated with two list elem and returns true if 
+  the priority of the first is less than that of the second */
+static bool
+compare_priority2(const struct list_elem *a , const struct list_elem *b, void *aux UNUSED){
+  struct thread *t1 = list_entry(a, struct thread, elem);
+  struct thread *t2 = list_entry(b, struct thread, elem);
+  return t1 -> priority < t2 -> priority;
 }
 
 /* Down or "P" operation on a semaphore.  Waits for SEMA's value
@@ -124,9 +133,13 @@ sema_up (struct semaphore *sema)
 
   old_level = intr_disable ();
   sema->value++;
-  if (!list_empty (&sema->waiters)) 
-    thread_unblock (list_entry (list_pop_front (&sema->waiters),
-                                struct thread, elem));
+  if (!list_empty (&sema->waiters)){
+    /*thread_unblock (list_entry (list_pop_front (&sema->waiters),
+                                struct thread, elem));*/
+    struct list_elem* max = list_max(&sema->waiters,&compare_priority2,NULL);
+    list_remove(max);
+    thread_unblock (list_entry (max, struct thread , elem));
+  }
   intr_set_level (old_level);
 }
 
@@ -256,13 +269,22 @@ lock_held_by_current_thread (const struct lock *lock)
   return lock->holder == thread_current ();
 }
 
-/* Compares the thread _sleep structure asociated with two list elem and returns true if 
-  the wake_up_tick of the first is less than that of the second */
+/* Compares the thread structure asociated with two list elem and returns true if 
+  the priority of the first is more than that of the second */
 static bool
 compare_priority_sema(const struct list_elem *a , const struct list_elem *b, void *aux UNUSED){
   struct thread *t1 = (list_entry(a, struct semaphore_elem , elem))->thread;
   struct thread *t2 = (list_entry(b, struct semaphore_elem , elem))->thread;
   return t1 -> priority > t2 -> priority;
+}
+
+/* Compares the thread structure asociated with two list elem and returns true if 
+  the priority of the first is less than that of the second */
+static bool
+compare_priority_sema2(const struct list_elem *a , const struct list_elem *b, void *aux UNUSED){
+  struct thread *t1 = (list_entry(a, struct semaphore_elem , elem))->thread;
+  struct thread *t2 = (list_entry(b, struct semaphore_elem , elem))->thread;
+  return t1 -> priority < t2 -> priority;
 }
 
 /* Initializes condition variable COND.  A condition variable
@@ -331,9 +353,13 @@ cond_signal (struct condition *cond, struct lock *lock UNUSED)
   ASSERT (!intr_context ());
   ASSERT (lock_held_by_current_thread (lock));
 
-  if (!list_empty (&cond->waiters)) 
-    sema_up (&list_entry (list_pop_front (&cond->waiters),
-                          struct semaphore_elem, elem)->semaphore);
+  if (!list_empty (&cond->waiters)){
+    /*sema_up (&list_entry (list_pop_front (&cond->waiters),
+                          struct semaphore_elem, elem)->semaphore);*/
+    struct list_elem* max = list_max(&cond->waiters,&compare_priority_sema2,NULL);
+    list_remove(max);
+    sema_up (&list_entry (max, struct semaphore_elem , elem)->semaphore );
+  }
 }
 
 /* Wakes up all threads, if any, waiting on COND (protected by

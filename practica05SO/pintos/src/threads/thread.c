@@ -11,6 +11,9 @@
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
+#include "threads/fix-point.h"
+#include "devices/timer.h"
+
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
@@ -59,6 +62,8 @@ static unsigned thread_ticks;   /* # of timer ticks since last yield. */
    Controlled by kernel command-line option "-o mlfqs". */
 bool thread_mlfqs;
 
+static int load_avg;
+
 static void kernel_thread (thread_func *, void *aux);
 
 static void idle (void *aux UNUSED);
@@ -70,6 +75,11 @@ static void *alloc_frame (struct thread *, size_t size);
 static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
+void calc_recent_cpu(struct thread *t, void* aux UNUSED);
+void calc_load_avg (void);
+void calc_nice_priority(struct thread *t, void* aux UNUSED);
+int ready_threads(void);
+void check_and_make_preemption(int new_priority);
 
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
@@ -95,6 +105,7 @@ thread_init (void)
     list_init (&ready_list[i]);
   }
   list_init (&all_list);
+  load_avg = 0;
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
@@ -125,6 +136,7 @@ thread_start (void)
 void
 thread_tick (void) 
 {
+  enum intr_level old_level;
   struct thread *t = thread_current ();
 
   /* Update statistics. */
@@ -134,9 +146,29 @@ thread_tick (void)
   else if (t->pagedir != NULL)
     user_ticks++;
 #endif
-  else
+  else{
     kernel_ticks++;
+  }
 
+  /** Advance scheduler */
+  old_level = intr_disable ();
+  if(thread_mlfqs){
+    if (t != idle_thread){
+      t -> recent_cpu = ADD_FP_INT(t->recent_cpu,1);
+    }
+
+    if(timer_ticks() % TIMER_FREQ == 0){
+      calc_load_avg();
+      thread_foreach(&calc_recent_cpu,NULL);
+      //thread_foreach(&calc_nice_priority,NULL);
+    }
+
+    if(timer_ticks() % TIME_SLICE == 0){
+      thread_foreach(&calc_nice_priority,NULL);
+    }
+  }
+  intr_set_level (old_level);
+  
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return ();
@@ -353,11 +385,23 @@ thread_foreach (thread_action_func *func, void *aux)
     }
 }
 
-/* Sets the current thread's priority to NEW_PRIORITY. */
+/** Get the number of thread in the ready list */
+int
+ready_threads(void){
+  int size = 0;
+  for(int i = 0; i < PRI_MAX + 1; i++){
+    size += list_size(&ready_list[i]);
+  }
+  if (thread_current() != idle_thread)
+    size += 1;
+  return size;
+}
+
+/** It goes through the ready_list and in case of 
+ * finding processes with higher priority it makes preemption */
 void
-thread_set_priority (int new_priority) 
+check_and_make_preemption(int new_priority)
 {
-  thread_current ()->priority = new_priority;
   for(int i = new_priority; i < PRI_MAX + 1; i++)
   {
     if(!list_empty (&ready_list[i]) ){
@@ -371,6 +415,17 @@ thread_set_priority (int new_priority)
   }
 }
 
+/* Sets the current thread's priority to NEW_PRIORITY. */
+void
+thread_set_priority (int new_priority) 
+{
+  if(!thread_mlfqs)
+  {
+    thread_current ()->priority = new_priority;
+    check_and_make_preemption(new_priority);
+  }
+}
+
 /* Returns the current thread's priority. */
 int
 thread_get_priority (void) 
@@ -380,35 +435,78 @@ thread_get_priority (void)
 
 /* Sets the current thread's nice value to NICE. */
 void
-thread_set_nice (int nice UNUSED) 
+thread_set_nice (int nice) 
 {
-  /* Not yet implemented. */
+  ASSERT (NICE_MIN <= nice && nice <= NICE_MAX);
+  thread_current ()->nice = nice;
+    
+  calc_recent_cpu(thread_current(),NULL);
+  calc_nice_priority(thread_current(),NULL);
+    
+  int new_priority = thread_current()->priority;
+  check_and_make_preemption(new_priority);
+  
 }
 
 /* Returns the current thread's nice value. */
 int
 thread_get_nice (void) 
 {
-  /* Not yet implemented. */
-  return 0;
+  return thread_current ()->nice;
 }
 
 /* Returns 100 times the system load average. */
 int
 thread_get_load_avg (void) 
 {
-  /* Not yet implemented. */
-  return 0;
+  return FIXPOINT_TO_INT_ROUNDED (MULT_FP_INT(load_avg,100));
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
 int
 thread_get_recent_cpu (void) 
 {
-  /* Not yet implemented. */
-  return 0;
+  return FIXPOINT_TO_INT_ROUNDED( MULT_FP_INT(thread_current()->recent_cpu , 100) );
 }
-
+
+/* Calculate the priority of a process t in a BSD Scheduler */
+void 
+calc_nice_priority(struct thread *t, void* aux UNUSED)
+{
+  int nice = t->nice;
+  int recent_cpu = t->recent_cpu;
+  //int old_priority = t->priority;
+  //struct list_elem *elem;
+  
+  int priority = PRI_MAX - FIXPOINT_TO_INT_TRUNCATED (DIV_FP_INT  (recent_cpu , 4)) - (nice * 2);
+  
+  priority = priority > PRI_MAX ? PRI_MAX : (priority < PRI_MIN ? PRI_MIN : priority); 
+
+  t -> priority = priority;
+
+  /**if (old_priority != priority ){
+    elem = list_remove(&t->elem);
+    list_push_back(&ready_list[priority],elem);
+  }*/
+}
+
+/* Calculate the load_avg in a BSD Scheduler */
+void 
+calc_load_avg()
+{
+  load_avg =  ADD_FP (MULT_FP(FRAC_TO_FIXPOINT(59,60),load_avg) , (FRAC_TO_FIXPOINT(ready_threads(),60)));
+}
+
+/* Calculate the recent_cpu of a process t in a BSD Scheduler */
+void
+calc_recent_cpu( struct thread *t, void* aux UNUSED)
+{
+  int nice = t -> nice;
+  int t1 = MULT_FP_INT(load_avg,2);
+  int t2 = ADD_FP_INT(t1,1);
+  t-> recent_cpu = ADD_FP_INT(MULT_FP(DIV_FP(t1,t2),t->recent_cpu),nice);
+}
+
 /* Idle thread.  Executes when no other thread is ready to run.
 
    The idle thread is initially put on the ready list by
@@ -492,7 +590,20 @@ init_thread (struct thread *t, const char *name, int priority)
   t->status = THREAD_BLOCKED;
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
-  t->priority = priority;
+
+  if(!thread_mlfqs){
+    t->priority = priority;
+  }else{ 
+    if(strcmp(t->name,"main")==0){
+      t->recent_cpu = 0;
+      t->nice = 0;
+    }else{
+      t->nice = thread_current() -> nice;
+      t->recent_cpu = thread_current() -> recent_cpu;
+    }
+    
+    calc_nice_priority(t,NULL); 
+  }
   t->magic = THREAD_MAGIC;
   list_push_back (&all_list, &t->allelem);
 }

@@ -11,6 +11,10 @@
 FirstName LastName <email@domain.example>
 FirstName LastName <email@domain.example>
 
+Arenas Ayala Ramón >ramon_cmk@ciencias.unam.mx>
+Lugo Cano Daniel <danylugo@ciencias.unam.mx>
+Millán Pimentel Oscar Fernando <o_fernando_m_p@ciencias.unam.mx>
+
 ---- PRELIMINARIES ----
 
 >> If you have any preliminary comments on your submission, notes for the
@@ -29,12 +33,44 @@ FirstName LastName <email@domain.example>
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+	struct thread
+	  {
+	    /* Owned by thread.c. */
+	    tid_t tid;                          /* Thread identifier. */
+	    enum thread_status status;          /* Thread state. */
+    	char name[16];                      /* Name (for debugging purposes). */
+	    uint8_t *stack;                     /* Saved stack pointer. */
+	    int priority;                       /* Priority. */
+	    struct list_elem allelem;           /* List element for all threads list. */
+
+	    /* Shared between thread.c and synch.c. */
+	    struct list_elem elem;              /* List element. */
+
+	    int recent_cpu;                     /* Recent_CPU. */
+    	    int nice;                           /* Nice. */
+
+	#ifdef USERPROG
+	    /* Owned by userprog/process.c. */
+	    uint32_t *pagedir;                  /* Page directory. */
+	#endif
+
+	    /* Owned by thread.c. */
+    	unsigned magic;                     /* Detects stack overflow. */
+	  };
+	
+	Agregue nice y recent_cpu a la struct thread, esto para poder guardar esos valores en cada thread y asi recalcularlos
+
+
 ---- ALGORITHMS ----
 
 >> C2: How do you manage ready_threads value?, how is it affected by 
 >> idle thread?
+	El valor de los ready threads lo obtuve contando todos los threads en la ready_list
+	y en caso de que el current_thread no se idle thread le sumo uno
 
->> C3: How do you keep low timer's interrupt handler's latency? 
+>> C3: How do you keep low timer's interrupt handler's latency?
+	Para mantenerlo bajo es debido a que solo se recorre de manera lineal 
+	la lista de all threads y en cada thread se hacen solo operaciones en tiempo constante.
 
 ---- RATIONALE ----
 
@@ -44,11 +80,19 @@ FirstName LastName <email@domain.example>
 >> abstraction layer for fixed-point math, that is, an abstract data
 >> type and/or a set of functions or macros to manipulate fixed-point
 >> numbers, why did you do so?  If not, why not?
+	Lo que hice fue crear un conjunto de macros, lo hice de esta forma ya que me pareció
+	la mas sencilla de integrar al proyecto, ya que solo debía agregarse el include y nada más.
 
 >> C5: Are you using an actual multilevel queue for representing the
 >> ready_list? Explain why and the impact it might have on the overall
 >> system's performance.
+	Si, esto lo hice desde la práctica pasada para poder manejar los threads en distintas listas
+	según su prioridad. Esto es bueno por que permite insersiones y sacar elementos en tiempo constante
+	de la ready_list.
 
 >> C6: Once you have changed the priority of all process, how do you
 >> make sure that for all waiting list (as ready_list, waiters_list for semaphores
->> , etc) the highest priority process is the first selected to leave the structure? 
+>> , etc) the highest priority process is the first selected to leave the structure?
+	La idea que tuve para la ready_list es al recalcular la prioridad es ver si cambio, y en caso de ser asi sacarlo de la lista
+	y meterlo en la que corresponde (tuve problemas con eso y no logré hacerlo pero deje comentarios de lo que intente) y para el caso 
+	de los semaforos es solo sacar el de mayor prioridad aunque eso tenga mas complejidad que lo anterior
